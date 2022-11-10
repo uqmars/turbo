@@ -5,6 +5,9 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
+mod text;
+use text::*;
+
 struct Handler;
 
 // Messages
@@ -20,14 +23,11 @@ Games:
 
 Text:
     banter      Just a bit of banter!
+    roll        Defaults 1d20.
+                !roll [max] [min] [range]
 ";
 
-// Temporary until properly implemented
-const BANTER_MESSAGE: &str = "Just a bit of banter!";
-
 const INVALID_COMMAND_MESSAGE: &str = "Invalid command. Type !help for 'working' commands.";
-
-const ROLL_MESSAGE: &str = "Statistics is made up. Everything is 50/50 either it happens or it doesn't.";
 
 const HELP_COMMAND: &str = "!help";
 
@@ -47,12 +47,13 @@ impl EventHandler for Handler {
                 }
             },
             BANTER_COMMAND => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, BANTER_MESSAGE).await {
+                if let Err(why) = msg.channel_id.say(&ctx.http, banter()).await {
                     println!("Error sending message: {:?}", why);
                 }
             },
             ROLL_COMMAND => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, ROLL_MESSAGE).await {
+                // Need to be able to parse flags into each field
+                if let Err(why) = msg.channel_id.say(&ctx.http, roll(None, None, None)).await {
                     println!("Error sending message: {:?}", why);
                 }
             }
