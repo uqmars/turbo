@@ -27,9 +27,13 @@ const BANTER_MESSAGE: &str = "Just a bit of banter!";
 
 const INVALID_COMMAND_MESSAGE: &str = "Invalid command. Type !help for 'working' commands.";
 
+const ROLL_MESSAGE: &str = "Statistics is made up. Everything is 50/50 either it happens or it doesn't.";
+
 const HELP_COMMAND: &str = "!help";
 
 const BANTER_COMMAND: &str = "!banter";
+
+const ROLL_COMMAND: &str = "!roll";
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -47,6 +51,11 @@ impl EventHandler for Handler {
                     println!("Error sending message: {:?}", why);
                 }
             },
+            ROLL_COMMAND => {
+                if let Err(why) = msg.channel_id.say(&ctx.http, ROLL_MESSAGE).await {
+                    println!("Error sending message: {:?}", why);
+                }
+            }
             _ => {
                 if let Err(why) = msg.channel_id.say(&ctx.http, INVALID_COMMAND_MESSAGE).await {
                     println!("Error sending message: {:?}", why);
