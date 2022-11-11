@@ -8,6 +8,9 @@ use serenity::prelude::*;
 mod text;
 use text::*;
 
+mod utilities;
+use utilities::*;
+
 struct Handler;
 
 // Messages
@@ -29,11 +32,17 @@ Text:
 
 const INVALID_COMMAND_MESSAGE: &str = "Invalid command. Type !help for 'working' commands.";
 
+const COMMAND_UNDER_REPAIR: &str = "This command is currently being fixed. Hold tight!";
+
+const AOC_COMMAND: &str = "!aoc";
+
 const HELP_COMMAND: &str = "!help";
 
 const BANTER_COMMAND: &str = "!banter";
 
 const ROLL_COMMAND: &str = "!roll";
+
+const VOTING_COMMAND: &str = "!voteythumbs";
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -41,6 +50,11 @@ impl EventHandler for Handler {
     // Thank you to Luna for helping us to get the message pattern matching to work! 
     async fn message(&self, ctx: Context, msg: Message) {
         match msg.content.as_str() {
+            AOC_COMMAND => {
+                if let Err(why) = msg.channel_id.say(&ctx.http, COMMAND_UNDER_REPAIR).await {
+                    println!("Error sending message: {:?}", why);
+                }
+            }
             HELP_COMMAND => {
                 if let Err(why) = msg.channel_id.say(&ctx.http, HELP_MESSAGE).await {
                     println!("Error sending message: {:?}", why);
@@ -56,7 +70,12 @@ impl EventHandler for Handler {
                 if let Err(why) = msg.channel_id.say(&ctx.http, roll(None, None, None)).await {
                     println!("Error sending message: {:?}", why);
                 }
-            }
+            },
+            VOTING_COMMAND => {
+                if let Err(why) = msg.channel_id.say(&ctx.http, COMMAND_UNDER_REPAIR).await {
+                    println!("Error sending message: {:?}", why);
+                }
+             },
             _ => {
                 if let Err(why) = msg.channel_id.say(&ctx.http, INVALID_COMMAND_MESSAGE).await {
                     println!("Error sending message: {:?}", why);
