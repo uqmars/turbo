@@ -1,3 +1,8 @@
+use serenity::async_trait;
+use serenity::model::channel::Message;
+use serenity::model::gateway::Ready;
+use serenity::prelude::*;
+
 use rand::prelude::*;
 
 /// Commands which has text-based responses

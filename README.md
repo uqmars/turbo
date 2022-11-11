@@ -3,9 +3,10 @@ UQ MARS Discord Bot
 
 # Goals and Roadmap
 
-# TODO
-- [  ] Make the banter file usable.
-- [  ] Make a random number generator.
-
 ## December 2022
 - [  ] Have a roadmap
+
+
+# Dependancies 
+- [Serenity](https://docs.rs/serenity/latest/serenity/)
+- [Poise](https://docs.rs/poise/latest/poise/)
