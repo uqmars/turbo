@@ -49,35 +49,45 @@ impl EventHandler for Handler {
 
     // Thank you to Luna for helping us to get the message pattern matching to work! 
     async fn message(&self, ctx: Context, msg: Message) {
+
+        // Ignore bot messages
+        if msg.author.bot {
+            return;
+        }
+
+        // Ignore non-commands
+        if !msg.content.starts_with('!') {return};
+
+        // Check message contents
         match msg.content.as_str() {
             AOC_COMMAND => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, COMMAND_UNDER_REPAIR).await {
+                if let Err(why) = msg.reply(&ctx.http, COMMAND_UNDER_REPAIR).await {
                     println!("Error sending message: {:?}", why);
                 }
             }
             HELP_COMMAND => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, HELP_MESSAGE).await {
+                if let Err(why) = msg.reply(&ctx.http, HELP_MESSAGE).await {
                     println!("Error sending message: {:?}", why);
                 }
             },
             BANTER_COMMAND => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, banter()).await {
+                if let Err(why) = msg.reply(&ctx.http, banter()).await {
                     println!("Error sending message: {:?}", why);
                 }
             },
             ROLL_COMMAND => {
                 // Need to be able to parse flags into each field
-                if let Err(why) = msg.channel_id.say(&ctx.http, roll(None, None, None)).await {
+                if let Err(why) = msg.reply(&ctx.http, roll(None, None, None)).await {
                     println!("Error sending message: {:?}", why);
                 }
             },
             VOTING_COMMAND => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, COMMAND_UNDER_REPAIR).await {
+                if let Err(why) = msg.reply(&ctx.http, COMMAND_UNDER_REPAIR).await {
                     println!("Error sending message: {:?}", why);
                 }
              },
             _ => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, INVALID_COMMAND_MESSAGE).await {
+                if let Err(why) = msg.reply(&ctx.http, INVALID_COMMAND_MESSAGE).await {
                     println!("Error sending message: {:?}", why);
                 }
             }
