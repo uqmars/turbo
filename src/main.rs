@@ -1,17 +1,49 @@
 use std::env;
-
+ 
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
-use serenity::prelude::*;
+use poise::serenity_prelude as serenity;
 
 mod text;
-use text::*;
 
 mod utilities;
-use utilities::*;
 
 struct Handler;
+
+struct Data {} // User data, which is stored and accessible in all command invocations
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+
+#[async_trait]
+impl serenity::EventHandler for Handler {
+
+    // Thank you to Luna for helping us to get the message pattern matching to work! 
+    async fn message(&self, ctx: serenity::Context, msg: Message) {
+
+        // Ignore bot messages
+        if msg.author.bot {
+            return;
+        }
+
+        if msg.content.contains("codeword") {
+            if let Err(why) = msg.reply_ping(&ctx.http, "You said the codeword!").await {
+                println!("Error sending message: {:?}", why);
+            }
+        }
+
+    }
+
+    // Set a handler to be called on the `ready` event. This is called when a
+    // shard is booted, and a READY payload is sent by Discord. This payload
+    // contains data like the current user's guild Ids, current user data,
+    // private channels, and more.
+    //
+    // In this case, just print what the current user's username is.
+    async fn ready(&self, _: serenity::Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
+    }
+}
 
 // Messages
 const HELP_MESSAGE: &str = "
@@ -30,104 +62,110 @@ Text:
                 !roll [max] [min] [range]
 ";
 
-const INVALID_COMMAND_MESSAGE: &str = "Invalid command. Type !help for 'working' commands.";
-
 const COMMAND_UNDER_REPAIR: &str = "This command is currently being fixed. Hold tight!";
 
-const AOC_COMMAND: &str = "!aoc";
-
-const HELP_COMMAND: &str = "!help";
-
-const BANTER_COMMAND: &str = "!banter";
-
-const ROLL_COMMAND: &str = "!roll";
-
-const VOTING_COMMAND: &str = "!voteythumbs";
-
-#[async_trait]
-impl EventHandler for Handler {
-
-    // Thank you to Luna for helping us to get the message pattern matching to work! 
-    async fn message(&self, ctx: Context, msg: Message) {
-
-        // Ignore bot messages
-        if msg.author.bot {
-            return;
-        }
-
-        // Ignore non-commands
-        if !msg.content.starts_with('!') {return};
-
-        // Check message contents
-        match msg.content.as_str() {
-            AOC_COMMAND => {
-                if let Err(why) = msg.reply(&ctx.http, COMMAND_UNDER_REPAIR).await {
-                    println!("Error sending message: {:?}", why);
-                }
-            }
-            HELP_COMMAND => {
-                if let Err(why) = msg.reply(&ctx.http, HELP_MESSAGE).await {
-                    println!("Error sending message: {:?}", why);
-                }
-            },
-            BANTER_COMMAND => {
-                if let Err(why) = msg.reply(&ctx.http, banter()).await {
-                    println!("Error sending message: {:?}", why);
-                }
-            },
-            ROLL_COMMAND => {
-                // Need to be able to parse flags into each field
-                if let Err(why) = msg.reply(&ctx.http, roll(None, None, None)).await {
-                    println!("Error sending message: {:?}", why);
-                }
-            },
-            VOTING_COMMAND => {
-                if let Err(why) = msg.reply(&ctx.http, COMMAND_UNDER_REPAIR).await {
-                    println!("Error sending message: {:?}", why);
-                }
-             },
-            _ => {
-                if let Err(why) = msg.reply(&ctx.http, INVALID_COMMAND_MESSAGE).await {
-                    println!("Error sending message: {:?}", why);
-                }
-            }
-        };
-    }
-
-
-    // Set a handler to be called on the `ready` event. This is called when a
-    // shard is booted, and a READY payload is sent by Discord. This payload
-    // contains data like the current user's guild Ids, current user data,
-    // private channels, and more.
-    //
-    // In this case, just print what the current user's username is.
-    async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-    }
+/// Displays the help message
+#[poise::command(slash_command, prefix_command)]
+async fn help(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    ctx.say(HELP_MESSAGE).await?;
+    Ok(())
 }
 
+/// Displays a banter message
+#[poise::command(slash_command, prefix_command)]
+async fn banter(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    ctx.say(text::banter().as_str()).await?;
+    Ok(())
+}
 
+/// Displays a banter message
+#[poise::command(slash_command, prefix_command)]
+async fn roll(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    ctx.say(text::roll(None, None, None).as_str()).await?;
+    Ok(())
+}
+
+/// Actions the voteythumbs command
+#[poise::command(slash_command, prefix_command)]
+async fn voteythumbs(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    ctx.say(COMMAND_UNDER_REPAIR).await?;
+    Ok(())
+}
+
+/// Actions the Advent of Code command
+#[poise::command(slash_command, prefix_command)]
+async fn aoc(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    ctx.say(COMMAND_UNDER_REPAIR).await?;
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() {
     // Configure the client with your Discord bot token in the environment.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     // Set gateway intents, which decides what events the bot will be notified about
-    let intents = GatewayIntents::GUILD_MESSAGES
-        | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
+    let intents = serenity::GatewayIntents::GUILD_MESSAGES
+        | serenity::GatewayIntents::DIRECT_MESSAGES
+        | serenity::GatewayIntents::MESSAGE_CONTENT;
+
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![
+                help(),
+                banter(),
+                roll(),
+                voteythumbs(),
+                aoc()
+            ],
+            prefix_options: poise::PrefixFrameworkOptions {
+                prefix: Some("!".into()),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                if cfg!(debug_assertions) {
+                    let guild_id = env::var("GUILD_ID")
+                        .ok()
+                        .and_then(|v| v.parse::<u64>().ok())
+                        .unwrap_or(0);
+                    poise::builtins::register_in_guild(
+                    ctx,
+                    &framework.options().commands,
+                    serenity::GuildId::new(guild_id),
+                ).await?;
+                } else {
+                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                }
+                Ok(Data {})
+            })
+        })
+        .build();
 
     // Create a new instance of the Client, logging in as a bot. This will
     // automatically prepend your bot token with "Bot ", which is a requirement
     // by Discord for bot users.
-    let mut client =
-        Client::builder(&token, intents).event_handler(Handler).await.expect("Err creating client");
+    let client = serenity::ClientBuilder::new(token, intents)
+        .framework(framework)
+        .event_handler(Handler)
+        .await;
 
     // Finally, start a single shard, and start listening to events.
     //
     // Shards will automatically attempt to reconnect, and will perform
     // exponential backoff until it reconnects.
-    if let Err(why) = client.start().await {
+    if let Err(why) = client.unwrap().start().await {
         println!("Client error: {:?}", why);
     }
 }
