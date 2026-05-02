@@ -4,6 +4,7 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use poise::serenity_prelude as serenity;
+use serde_json::Value;
 
 mod text;
 
@@ -109,8 +110,45 @@ async fn aoc(
     Ok(())
 }
 
+/// Actions the Members command
+#[poise::command(slash_command, prefix_command)]
+async fn members(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    let exec_role = env::var("EXEC_ROLE_ID").expect("Expected an executive role ID in the environment");
+    if !ctx.author().has_role(&ctx, ctx.guild_id().unwrap(), exec_role.parse::<u64>().unwrap()).await? {
+        ctx.reply("You need to be an exec to run the `members` command.").await?;
+        return Ok(());
+    }
+
+    let sheet_id = env::var("MEMBER_STATS_SHEET_ID").expect("Expected a google sheet ID in the environment");
+    let cell_id = env::var("MEMBER_STATS_CELL").expect("Expected a google sheet cell ID in the environment");
+    let sheets_api = env::var("GOOGLE_SHEETS_API_KEY").expect("Expected a google sheets API key in the environment");
+    let membership_url: String = format!("https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}?key={}", sheet_id, cell_id, sheets_api);
+    let resp = reqwest::get(membership_url)
+        .await?
+        .text()
+        .await?;
+
+    let parsed: Value = serde_json::from_str(&resp).unwrap();
+
+    // Access fields using square brackets
+    let valA = &parsed["values"][0].get(0).unwrap();
+    let members: i32 = valA.as_str().unwrap().parse().unwrap();
+    let valB = &parsed["values"][1].get(0).unwrap();
+    let quorum: i32 = valB.as_str().unwrap().parse().unwrap();
+
+    let msg: String = format!("There are currently {members} members of UQ MARS, making the current quorum {quorum}");
+    println!("{msg}");
+    ctx.say(msg).await?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
+    // Pull in vars from '.env'
+    dotenv::dotenv().ok();
+
     // Configure the client with your Discord bot token in the environment.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     // Set gateway intents, which decides what events the bot will be notified about
@@ -125,7 +163,8 @@ async fn main() {
                 banter(),
                 roll(),
                 voteythumbs(),
-                aoc()
+                aoc(),
+                members()
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("!".into()),
