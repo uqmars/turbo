@@ -13,6 +13,7 @@ use text::{COMMAND_UNDER_REPAIR, HELP_MESSAGE};
 mod utilities;
 use utilities::{Data, Error, Context};
 
+mod emoji_vote;
 
 struct Handler;
 
@@ -62,8 +63,8 @@ impl serenity::EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let _ = utilities::create_emoji_db();
-        utilities::revive_all_emoji_votes(ctx.http.clone()).await;
+        let _ = emoji_vote::create_emoji_db();
+        emoji_vote::revive_all_emoji_votes(ctx.http.clone()).await;
     }
 }
 
@@ -168,7 +169,7 @@ async fn emoji_vote(
     emoji_name: String,
     time_days: Option<u64>
 ) -> Result<(), Error> {
-    utilities::emoji_vote(ctx, img, emoji_name, time_days.unwrap_or(3)).await
+    emoji_vote::emoji_vote(ctx, img, emoji_name, time_days.unwrap_or(3)).await
 }
 
 #[tokio::main]
