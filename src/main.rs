@@ -14,6 +14,7 @@ mod utilities;
 use utilities::{Data, Error, Context};
 
 mod emoji_vote;
+mod rules;
 
 struct Handler;
 
@@ -65,6 +66,8 @@ impl serenity::EventHandler for Handler {
 
         let _ = emoji_vote::create_emoji_db();
         emoji_vote::revive_all_emoji_votes(ctx.http.clone()).await;
+        
+        let _ = rules::create_rules_db();
     }
 }
 
@@ -196,7 +199,8 @@ async fn main() {
                 voteythumbs(),
                 aoc(),
                 members(),
-                emoji_vote()
+                emoji_vote(),
+                rules::rules(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("!".into()),

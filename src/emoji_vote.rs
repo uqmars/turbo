@@ -34,7 +34,15 @@ pub fn create_emoji_db() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn insert_emoji_db(
+struct EmojiVote {
+    emoji_name: String,
+    msg_id: u64,
+    channel_id: u64,
+    guild_id: u64,
+    end_time: u64
+}
+
+fn insert_emoji_db(
     emoji_name: &str,
     msg_id: u64,
     channel_id: u64,
@@ -53,7 +61,7 @@ pub fn insert_emoji_db(
     Ok(())
 }
 
-pub fn remove_emoji_db(
+fn remove_emoji_db(
     emoji_name: &str,
     msg_id: u64
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -67,14 +75,6 @@ pub fn remove_emoji_db(
     )?;
 
     Ok(())
-}
-
-struct EmojiVote {
-    emoji_name: String,
-    msg_id: u64,
-    channel_id: u64,
-    guild_id: u64,
-    end_time: u64
 }
 
 fn get_all_emoji_db() -> Result<Vec<EmojiVote>, Box<dyn std::error::Error>> {
