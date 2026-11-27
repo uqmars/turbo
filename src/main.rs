@@ -76,6 +76,10 @@ impl serenity::EventHandler for Handler {
         emoji_vote::revive_all_emoji_votes(ctx.http.clone()).await;
 
         let _ = rules::create_rules_db();
+
+        let _ = advent_of_code::db::create_contestants_db();
+
+        println!("All databases live");
     }
 }
 
