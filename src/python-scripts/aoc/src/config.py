@@ -1,9 +1,9 @@
 import pytz
 import logging
 
-YEAR           = 2022
+YEAR           = 2026
 SESSION_COOKIE = ""
-LEADERBOARD    = ""
+LEADERBOARD    = "2247189"
 URL            = f"https://adventofcode.com/{YEAR}/leaderboard/private/view/{LEADERBOARD}.json"
 DISCORD_TOKEN  = ''
 COMMAND_PREFIX = '!'

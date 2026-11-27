@@ -9,15 +9,17 @@ license = "MIT"
 repository = "https://github.com/uqmars/turbo"
 
 [dependencies]
-tokio = { version = "1.25.1", features = ["macros", "rt-multi-thread"] }
-poise = "0.6.1"
-rand = "0.8"
-pyo3 = "0.17"
+cached = { version = "4.1.1", features = ["async"] }
+chrono = "0.4.45"
 dotenv = "0.15.0"
+poise = "0.6.1"
+pyo3 = "0.17"
+rand = "0.8"
 reqwest = { version = "0.13", features = ["json"] }
+rusqlite = { version = "0.35.0", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rusqlite = { version = "0.35.0", features = ["bundled"] }
+tokio = { version = "1.25.1", features = ["macros", "rt-multi-thread"] }
 
 [dependencies.serenity]
 version = "0.12.5"

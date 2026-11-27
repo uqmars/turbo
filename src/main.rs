@@ -1,18 +1,19 @@
 use std::env;
- 
+
+use poise::serenity_prelude as serenity;
 use serenity::all::EmojiId;
 use serenity::async_trait;
+use serenity::builder::{CreateAttachment, CreateMessage};
 use serenity::model::channel::{Message, ReactionType};
 use serenity::model::gateway::Ready;
-use poise::serenity_prelude as serenity;
-use serenity::builder::{CreateMessage, CreateAttachment};
 
 mod text;
 use text::{COMMAND_UNDER_REPAIR, HELP_MESSAGE};
 
 mod utilities;
-use utilities::{Data, Error, Context};
+use utilities::{Context, Data, Error};
 
+mod advent_of_code;
 mod emoji_vote;
 mod rules;
 
@@ -20,16 +21,19 @@ struct Handler;
 
 #[async_trait]
 impl serenity::EventHandler for Handler {
-
-    // Thank you to Luna for helping us to get the message pattern matching to work! 
+    // Thank you to Luna for helping us to get the message pattern matching to work!
     async fn message(&self, ctx: serenity::Context, msg: Message) {
-
         // Ignore bot messages
         if msg.author.bot {
             return;
         }
 
-        if msg.content.to_lowercase().split_whitespace().any(|word| word == "rust") {
+        if msg
+            .content
+            .to_lowercase()
+            .split_whitespace()
+            .any(|word| word == "rust")
+        {
             let rustacean_id = env::var("RUSTACEAN_EMOJI_ID")
                 .expect("Expected an emoji ID in the environment")
                 .parse::<u64>()
@@ -37,22 +41,26 @@ impl serenity::EventHandler for Handler {
             let rustacean = ReactionType::Custom {
                 animated: false,
                 id: EmojiId::new(rustacean_id),
-                name: Some("rustacean".to_string())
+                name: Some("rustacean".to_string()),
             };
             let _ = msg.react(&ctx, rustacean).await;
         }
 
-        if msg.content.to_lowercase().split_whitespace().any(|word| word == "uqcsbot") {
+        if msg
+            .content
+            .to_lowercase()
+            .split_whitespace()
+            .any(|word| word == "uqcsbot")
+        {
             let image = CreateAttachment::path("res/DunkedOn.jpg").await.unwrap();
             let text = "What are you talking about that punk <@814086324709359648> for?";
             let msg_reply = CreateMessage::default()
                 .content(text)
                 .add_file(image)
                 .reference_message(&msg);
-            
+
             let _ = msg.channel_id.send_message(&ctx, msg_reply).await;
         }
-
     }
 
     // Set a handler to be called on the `ready` event. This is called when a
@@ -66,46 +74,35 @@ impl serenity::EventHandler for Handler {
 
         let _ = emoji_vote::create_emoji_db();
         emoji_vote::revive_all_emoji_votes(ctx.http.clone()).await;
-        
+
         let _ = rules::create_rules_db();
     }
 }
 
 /// Displays the help message
 #[poise::command(slash_command, prefix_command)]
-async fn help(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
+async fn help(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say(HELP_MESSAGE).await?;
     Ok(())
 }
 
 /// Displays a banter message
 #[poise::command(slash_command, prefix_command)]
-async fn banter(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
+async fn banter(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say(text::banter().as_str()).await?;
     Ok(())
 }
 
 /// Displays a banter message
 #[poise::command(slash_command, prefix_command)]
-async fn roll(
-    ctx: Context<'_>,
-    max: Option<i32>,
-    min: Option<i32>
-) -> Result<(), Error> {
+async fn roll(ctx: Context<'_>, max: Option<i32>, min: Option<i32>) -> Result<(), Error> {
     ctx.say(text::roll(max, min).as_str()).await?;
     Ok(())
 }
 
 /// Actions the voteythumbs command
 #[poise::command(slash_command, prefix_command)]
-async fn voteythumbs(
-    ctx: Context<'_>,
-    msg: Option<String>
-) -> Result<(), Error> {
+async fn voteythumbs(ctx: Context<'_>, msg: Option<String>) -> Result<(), Error> {
     let msg_text: String = match msg {
         Some(x) => x,
         None => format!("{} has created a vote", ctx.author().display_name()),
@@ -116,41 +113,39 @@ async fn voteythumbs(
 }
 
 /// Actions the voteythumbs application command
-#[poise::command(ephemeral = true,
-    context_menu_command = "Votey Thumbs")]
-async fn votey(
-    ctx: Context<'_>,
-    msg: serenity::Message,
-) -> Result<(), Error> {
+#[poise::command(ephemeral = true, context_menu_command = "Votey Thumbs")]
+async fn votey(ctx: Context<'_>, msg: serenity::Message) -> Result<(), Error> {
     utilities::voty(&ctx, &msg).await?;
-    let response = format!("Reactions added to message from {}", msg.author.display_name());
+    let response = format!(
+        "Reactions added to message from {}",
+        msg.author.display_name()
+    );
     ctx.say(response).await?;
-    Ok(())
-}
-
-/// Actions the Advent of Code command
-#[poise::command(slash_command, prefix_command)]
-async fn aoc(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
-    ctx.say(COMMAND_UNDER_REPAIR).await?;
     Ok(())
 }
 
 /// Actions the Members command
 #[poise::command(slash_command, prefix_command)]
-async fn members(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
+async fn members(ctx: Context<'_>) -> Result<(), Error> {
     // Give it time
     ctx.defer().await?;
 
-    let exec_role = env::var("EXEC_ROLE_ID").expect("Expected an executive role ID in the environment");
-    if !ctx.author().has_role(&ctx, ctx.guild_id().unwrap(), exec_role.parse::<u64>().unwrap()).await? {
-        ctx.reply("You need to be an exec to run the `members` command.").await?;
+    let exec_role =
+        env::var("EXEC_ROLE_ID").expect("Expected an executive role ID in the environment");
+    if !ctx
+        .author()
+        .has_role(
+            &ctx,
+            ctx.guild_id().unwrap(),
+            exec_role.parse::<u64>().unwrap(),
+        )
+        .await?
+    {
+        ctx.reply("You need to be an exec to run the `members` command.")
+            .await?;
         return Ok(());
     }
-    
+
     let response: String = utilities::memberships().await.unwrap();
     ctx.say(response.as_str()).await?;
     Ok(())
@@ -158,19 +153,20 @@ async fn members(
 
 async fn is_server_stakeholder_channel(ctx: Context<'_>) -> Result<bool, Error> {
     let stakeholder_channel_id = env::var("STAKEHOLDER_CHANNEL_ID")
-        .expect("Expected a stakeholder channel ID in the environment").parse::<u64>().unwrap();
+        .expect("Expected a stakeholder channel ID in the environment")
+        .parse::<u64>()
+        .unwrap();
     let curr_channel_id = ctx.channel_id().get();
     Ok(stakeholder_channel_id == curr_channel_id)
 }
 
 /// Actions the Emoji Vote command
-#[poise::command(slash_command, prefix_command,
-    check = "is_server_stakeholder_channel")]
+#[poise::command(slash_command, prefix_command, check = "is_server_stakeholder_channel")]
 async fn emoji_vote(
     ctx: Context<'_>,
     img: serenity::Attachment,
     emoji_name: String,
-    time_days: Option<u64>
+    time_days: Option<u64>,
 ) -> Result<(), Error> {
     emoji_vote::emoji_vote(ctx, img, emoji_name, time_days.unwrap_or(3)).await
 }
@@ -197,7 +193,7 @@ async fn main() {
                 roll(),
                 votey(),
                 voteythumbs(),
-                aoc(),
+                advent_of_code::aoc(),
                 members(),
                 emoji_vote(),
                 rules::rules(),
@@ -219,7 +215,8 @@ async fn main() {
                         ctx,
                         &framework.options().commands,
                         serenity::GuildId::new(guild_id),
-                    ).await?;
+                    )
+                    .await?;
                 } else {
                     poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 }

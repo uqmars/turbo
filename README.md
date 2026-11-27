@@ -17,6 +17,4 @@ In order to get the bot working, you will need to set up a Discord application, 
 - Intents:
     - All
 
-Additionally, the following environment variables should be set:
-- DISCORD_TOKEN (The Discord application's bot token)
-- GUILD_ID (Only needed in testing / non-release, the server ID)
+Additionally, the environment variables should be set up in line with `.env.example`
