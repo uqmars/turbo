@@ -41,16 +41,18 @@ pub fn get_aoc_from_discord(id: u64) -> Result<Option<String>, Box<dyn std::erro
     Ok(aoc_name)
 }
 
-fn get_discord_from_aoc(username: String) -> Result<u64, Box<dyn std::error::Error>> {
+pub fn get_discord_from_aoc(username: String) -> Result<Option<u64>, Box<dyn std::error::Error>> {
     let conn = Connection::open(DB_FILE_NAME)?;
 
-    let disc_id = conn
-        .query_row(
-            "SELECT disc_id FROM contestants WHERE aoc_name = ?1",
-            (username,),
-            |row| Ok(row.get(0)?),
-        )
-        .unwrap();
+    let response = conn.query_row(
+        "SELECT disc_id FROM contestants WHERE aoc_name = ?1",
+        (username,),
+        |row| Ok(row.get(0)?),
+    );
+    let disc_id = match response {
+        Ok(x) => Some(x),
+        Err(_) => None,
+    };
     Ok(disc_id)
 }
 

@@ -1,17 +1,13 @@
-use reqwest::Response;
 use serde::Deserialize;
+use serenity::model::id::UserId;
 use std::collections::HashMap;
 use std::u8;
 
 use crate::utilities::{Context, Error};
-use pyo3::{
-    ffi::printfunc,
-    prelude::*,
-    types::{IntoPyDict, PyModule},
-};
 
 mod api;
 pub mod db;
+mod text_formatting;
 
 #[derive(Clone, Debug, Deserialize)]
 struct Star {
@@ -26,7 +22,7 @@ struct Member {
     local_score: u64,
     last_star_ts: u64,
     stars: u8,
-    completion_day_level: HashMap<String, HashMap<u8, Star>>,
+    completion_day_level: HashMap<u8, HashMap<u8, Star>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -131,10 +127,15 @@ pub async fn leaderboard(
     day: Option<u8>,
     year: Option<u16>,
 ) -> Result<(), Error> {
-    ctx.say("Leaderboard command run").await?;
-    let raw_packet: Leaderboard = api::retrieve_lb(year).await;
-    for (_, member) in raw_packet.members {
-        println!("{} is in the leaderboard!", member.name);
-    }
+    let leaderboard: Leaderboard = api::retrieve_lb(year).await;
+    let rendered_lb = text_formatting::render_lb(leaderboard, 10, |x| match x {
+        Some(y) => match ctx.cache().user(UserId::from(y)) {
+            Some(z) => Some(String::from(z.display_name())),
+            None => None,
+        },
+        None => None,
+    });
+    let msg = format!("```ansi\r\n{}\r\n```", rendered_lb.unwrap_or(String::new()));
+    ctx.say(msg).await?;
     Ok(())
 }
